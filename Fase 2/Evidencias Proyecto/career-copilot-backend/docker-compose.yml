@@ -1,0 +1,32 @@
+# Levanta TODO con un solo comando (backend + frontend):
+#   docker compose up --build
+# Luego abre http://localhost:5173
+#
+# Requisitos:
+#   - Docker Desktop abierto.
+#   - El frontend está en ../../career-copilot-frontend.
+#   - Un archivo .env en esta carpeta (copia .env.example y complétalo).
+#     El navegador necesita la URL y la clave anon pública de Supabase.
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL:?Falta SUPABASE_URL en el .env}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?Falta SUPABASE_SERVICE_ROLE_KEY en el .env}
+      CORS_ORIGINS: '["http://localhost:5173"]'
+
+  web:
+    build:
+      context: ../career-copilot-frontend
+      args:
+        VITE_API_URL: http://localhost:8000/api/v1
+        VITE_SUPABASE_URL: ${SUPABASE_URL:?Falta SUPABASE_URL en el .env}
+        VITE_SUPABASE_ANON_KEY: ${SUPABASE_KEY:?Falta SUPABASE_KEY en el .env}
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api

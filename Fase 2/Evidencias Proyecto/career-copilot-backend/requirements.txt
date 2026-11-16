@@ -1,0 +1,34 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# Cliente async oficial para Supabase Data API.
+supabase==2.34.1
+
+# Autenticación de Supabase Auth y validación de sus JWT.
+# passlib[bcrypt] 1.7.4 no es compatible con bcrypt>=4.1 (bug conocido);
+# se fija la versión de bcrypt explícitamente.
+passlib==1.7.4
+bcrypt==4.0.1
+pyjwt>=2.15.1
+
+# Extracción de CV (PDF / DOCX)
+pdfplumber==0.11.4
+pypdfium2==4.30.0
+pytesseract==0.3.13
+python-docx==1.1.2
+
+# Extracción de ofertas laborales desde una URL (Job Match)
+beautifulsoup4==4.12.3
+
+# IA — proveedor configurable (ver app/shared/ai_client.py)
+# httpx se fija <0.28 porque openai==1.51.0 aún usa un parámetro (`proxies`)
+# que httpx 0.28 eliminó — versiones más nuevas de openai no lo necesitan,
+# pero se fija httpx aquí para evitar el error en tiempo de ejecución.
+httpx==0.27.2
+openai==1.51.0
+
+# Validación / requests
+pydantic>=2.11.7
+pydantic-settings>=2.7.1
+email-validator==2.2.0
+python-multipart==0.0.9
