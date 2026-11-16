@@ -1,0 +1,106 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.usuarios (
+  id uuid NOT NULL,
+  email text NOT NULL UNIQUE,
+  nombre_completo text,
+  plan text NOT NULL DEFAULT 'free'::text CHECK (plan = ANY (ARRAY['free'::text, 'premium'::text])),
+  organization_id uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT usuarios_pkey PRIMARY KEY (id),
+  CONSTRAINT usuarios_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.cvs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  usuario_id uuid NOT NULL,
+  file_name text NOT NULL,
+  parsed_text text NOT NULL,
+  score integer,
+  analysis jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT cvs_pkey PRIMARY KEY (id),
+  CONSTRAINT cvs_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
+);
+CREATE TABLE public.job_matches (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  usuario_id uuid NOT NULL,
+  cv_id uuid NOT NULL,
+  nombre text NOT NULL,
+  oferta_texto text NOT NULL,
+  oferta_embedding jsonb,
+  score_compatibilidad integer NOT NULL,
+  cumple jsonb NOT NULL DEFAULT '[]'::jsonb,
+  no_cumple jsonb NOT NULL DEFAULT '[]'::jsonb,
+  fecha timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT job_matches_pkey PRIMARY KEY (id),
+  CONSTRAINT job_matches_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT job_matches_cv_id_fkey FOREIGN KEY (cv_id) REFERENCES public.cvs(id)
+);
+CREATE TABLE public.entrevistas (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  usuario_id uuid NOT NULL,
+  job_match_id uuid NOT NULL,
+  tipo text CHECK (tipo = ANY (ARRAY['tecnica'::text, 'rrhh'::text, 'mixta'::text])),
+  seniority_inferido text,
+  estado text NOT NULL DEFAULT 'activa'::text CHECK (estado = ANY (ARRAY['activa'::text, 'finalizada'::text])),
+  fecha_inicio timestamp with time zone NOT NULL DEFAULT now(),
+  fecha_fin timestamp with time zone,
+  CONSTRAINT entrevistas_pkey PRIMARY KEY (id),
+  CONSTRAINT entrevistas_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id),
+  CONSTRAINT entrevistas_job_match_id_fkey FOREIGN KEY (job_match_id) REFERENCES public.job_matches(id)
+);
+CREATE TABLE public.mensajes (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  entrevista_id uuid NOT NULL,
+  rol text NOT NULL CHECK (rol = ANY (ARRAY['usuario'::text, 'asistente'::text])),
+  contenido text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT mensajes_pkey PRIMARY KEY (id),
+  CONSTRAINT mensajes_entrevista_id_fkey FOREIGN KEY (entrevista_id) REFERENCES public.entrevistas(id)
+);
+CREATE TABLE public.emails_generados (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  usuario_id uuid NOT NULL,
+  job_match_id uuid,
+  subject text NOT NULL,
+  body text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  tone character varying NOT NULL DEFAULT 'professional'::character varying,
+  CONSTRAINT emails_generados_pkey PRIMARY KEY (id),
+  CONSTRAINT emails_generados_job_match_id_fkey FOREIGN KEY (job_match_id) REFERENCES public.job_matches(id),
+  CONSTRAINT emails_generados_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
+);
+CREATE TABLE public.perfiles (
+  usuario_id uuid NOT NULL,
+  full_name character varying NOT NULL,
+  headline character varying,
+  email character varying NOT NULL,
+  phone character varying,
+  country character varying,
+  region character varying,
+  commune character varying,
+  professional_summary text,
+  skills json NOT NULL DEFAULT '[]'::json,
+  experiences json NOT NULL DEFAULT '[]'::json,
+  additional_sections json DEFAULT '{}'::json,
+  CONSTRAINT perfiles_pkey PRIMARY KEY (usuario_id),
+  CONSTRAINT perfiles_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id)
+);
+CREATE TABLE public.job_application_status (
+  job_match_id uuid NOT NULL,
+  status character varying NOT NULL DEFAULT 'Saved'::character varying,
+  company character varying,
+  astro_advice text,
+  CONSTRAINT job_application_status_pkey PRIMARY KEY (job_match_id),
+  CONSTRAINT job_application_status_job_match_id_fkey FOREIGN KEY (job_match_id) REFERENCES public.job_matches(id)
+);
+CREATE TABLE public.entrevista_evaluaciones (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  entrevista_id uuid NOT NULL,
+  puntaje integer NOT NULL,
+  resultado json NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT entrevista_evaluaciones_pkey PRIMARY KEY (id),
+  CONSTRAINT entrevista_evaluaciones_entrevista_id_fkey FOREIGN KEY (entrevista_id) REFERENCES public.entrevistas(id)
+);
